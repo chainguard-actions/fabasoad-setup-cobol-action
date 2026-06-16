@@ -1,0 +1,32 @@
+name: Test force install
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          version: "3.2"
+          force: "true"
+      - name: Assert installed output is true
+        env:
+          ACTUAL: ${{ steps.action.outputs.installed }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ "$ACTUAL" != "true" ]; then
+            echo "FAIL: expected installed=true when force=true, got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert cobc is available after force install
+        run: |
+          if ! command -v cobc >/dev/null 2>&1; then
+            echo "FAIL: cobc not found in PATH after force install"
+            exit 1
+          fi
+          echo "cobc info:"
+          cobc --info
+          echo "PASS"
