@@ -1,14 +1,72 @@
-# fabasoad/setup-cobol-action
+# Setup COBOL (GnuCOBOL)
 
-This action sets up GnuCOBOL.
+[![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
+![GitHub release](https://img.shields.io/github/v/release/fabasoad/setup-cobol-action?include_prereleases)
+![functional-tests](https://github.com/fabasoad/setup-cobol-action/actions/workflows/functional-tests.yml/badge.svg)
+![security](https://github.com/fabasoad/setup-cobol-action/actions/workflows/security.yml/badge.svg)
+![linting](https://github.com/fabasoad/setup-cobol-action/actions/workflows/linting.yml/badge.svg)
 
-Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/fabasoad/setup-cobol-action](https://github.com/fabasoad/setup-cobol-action).
+This action sets up a [GnuCOBOL](https://en.wikipedia.org/wiki/COBOL) programming
+language.
 
-## Versions
+## Supported OS
 
-| Version | Tag | Upstream commit |
-|---------|-----|-----------------|
-| v1.6.0 | [`v1.6.0`](https://github.com/chainguard-actions/fabasoad-setup-cobol-action/tree/v1.6.0) | [`efd8437`](https://github.com/fabasoad/setup-cobol-action/commit/efd8437ec09499cb722dc31eaf7797d62af4230c) |
+<!-- prettier-ignore-start -->
+| OS      |                    |
+|---------|--------------------|
+| Windows | :x:                |
+| Linux   | :white_check_mark: |
+| macOS   | :x:                |
+<!-- prettier-ignore-end -->
+
+## Inputs
+
+```yaml
+- uses: fabasoad/setup-cobol-action@v1
+  with:
+    # (Optional) GnuCOBOL version. Defaults to 3.2.
+    version: "3.2"
+    # (Optional) If "true" it installs cobc even if it is already installed on a
+    # runner. Otherwise, skips installation.
+    force: "false"
+```
+
+## Outputs
+
+<!-- prettier-ignore-start -->
+| Name      | Description                       | Example |
+|-----------|-----------------------------------|---------|
+| installed | Whether cobc was installed or not | `true`  |
+<!-- prettier-ignore-end -->
+
+## Example usage
+
+### Workflow configuration
+
+```yaml
+name: Setup COBOL
+
+on: push
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: fabasoad/setup-cobol-action@v1
+      - name: Run script
+        run: |
+          cobc -x HelloWorld.cob
+          ./HelloWorld
+```
+
+### Result
+
+```text
+Run cobc -x HelloWorld.cob
+Hello World!
+```
 
 ## Privacy
 
