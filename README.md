@@ -8,6 +8,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 | Version | Tag | Upstream commit |
 |---------|-----|-----------------|
+| v1.5.1 | [`v1.5.1`](https://github.com/chainguard-actions/fabasoad-setup-cobol-action/tree/v1.5.1) | [`904d173`](https://github.com/fabasoad/setup-cobol-action/commit/904d17382bb307321efef861a771a5394acc4a4a) |
 | v1.6.0 | [`v1.6.0`](https://github.com/chainguard-actions/fabasoad-setup-cobol-action/tree/v1.6.0) | [`efd8437`](https://github.com/fabasoad/setup-cobol-action/commit/efd8437ec09499cb722dc31eaf7797d62af4230c) |
 
 ## Privacy
