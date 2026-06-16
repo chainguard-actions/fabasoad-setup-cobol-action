@@ -1,0 +1,46 @@
+name: Test skip installation when already installed
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Pre-install cobc via apt
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y gnucobol
+      - name: Verify cobc is already installed before action runs
+        run: |
+          if ! command -v cobc > /dev/null 2>&1; then
+            echo "FAIL: cobc should already be installed before action runs"
+            exit 1
+          fi
+          echo "cobc already installed: $(cobc --version | head -1)"
+      - name: Set up RUNNER_TEMP
+        run: mkdir -p /tmp/runner
+      - id: action
+        uses: .
+        env:
+          RUNNER_TEMP: /tmp/runner
+        with:
+          version: "3.2"
+          force: "false"
+      - name: Assert installed output is false (skipped)
+        env:
+          ACTUAL: ${{ steps.action.outputs.installed }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ "$ACTUAL" != "false" ]; then
+            echo "FAIL: expected installed='false' when cobc already installed and force=false, got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert cobc is still available after action
+        run: |
+          if ! command -v cobc > /dev/null 2>&1; then
+            echo "FAIL: cobc command not found after action ran"
+            exit 1
+          fi
+          echo "PASS: cobc is still available"
+          cobc --version
