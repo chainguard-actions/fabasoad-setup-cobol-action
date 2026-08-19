@@ -1,4 +1,5 @@
-name: Test basic usage - cobc already installed skip path
+---
+name: Test basic usage - GnuCOBOL already installed, action skips
 on:
   workflow_dispatch:
 jobs:
@@ -6,41 +7,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Pre-install cobc via apt
+      - name: Create fake cobc binary to simulate pre-installed GnuCOBOL
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y gnucobol
-      - name: Verify cobc is installed
+          mkdir -p /tmp/fake-cobol-bin
+          cat > /tmp/fake-cobol-bin/cobc << 'SCRIPT'
+          #!/bin/sh
+          echo "GnuCOBOL 3.2.0"
+          echo "Built    Nov  1 2022 00:00:00"
+          exit 0
+          SCRIPT
+          chmod +x /tmp/fake-cobol-bin/cobc
+          echo "/tmp/fake-cobol-bin" >> "$GITHUB_PATH"
+      - name: Verify fake cobc is on PATH
         run: |
-          if ! command -v cobc > /dev/null 2>&1; then
-            echo "FAIL: cobc should be installed via apt"
-            exit 1
-          fi
-          echo "cobc installed: $(cobc --version | head -1)"
-      - name: Set up RUNNER_TEMP
-        run: mkdir -p /tmp/runner
+          which cobc
+          cobc --version || true
       - id: action
         uses: .
-        env:
-          RUNNER_TEMP: /tmp/runner
         with:
           version: "3.2"
           force: "false"
-      - name: Assert installed output is false (skip path - cobc already present)
+      - name: Assert installed output is false (installation skipped)
         env:
           ACTUAL: ${{ steps.action.outputs.installed }}
         run: |
-          echo "actual: $ACTUAL"
+          echo "actual installed: $ACTUAL"
           if [ "$ACTUAL" != "false" ]; then
-            echo "FAIL: expected installed='false' when cobc already installed and force=false, got '$ACTUAL'"
+            echo "FAIL: expected installed=false (skipped) but got '$ACTUAL'"
             exit 1
           fi
-          echo "PASS"
-      - name: Assert cobc is available after action
+          echo "PASS: installed=false (installation was correctly skipped)"
+      - name: Assert cobc is available on PATH
         run: |
+          echo "cobc path: $(which cobc || echo 'not found')"
           if ! command -v cobc > /dev/null 2>&1; then
-            echo "FAIL: cobc command not found after action ran"
+            echo "FAIL: cobc not found on PATH"
             exit 1
           fi
           echo "PASS: cobc is available"
-          cobc --version
