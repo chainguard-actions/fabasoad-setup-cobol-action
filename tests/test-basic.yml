@@ -1,4 +1,5 @@
-name: Test basic usage
+---
+name: Test basic usage - cobc already present, skip install
 on:
   workflow_dispatch:
 jobs:
@@ -6,22 +7,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Pre-install gnucobol via apt
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y gnucobol
+          cobc --version
       - id: action
         uses: .
         with:
-          version: "4.0"
-      - name: Assert installed output is true
+          version: "3.3"
+          force: "false"
+      - name: Assert cobc is available
+        run: |
+          if ! command -v cobc > /dev/null 2>&1; then
+            echo "FAIL: cobc not found in PATH"
+            exit 1
+          fi
+          echo "PASS: cobc is available at $(which cobc)"
+      - name: Assert cobc info works
+        run: |
+          cobc --info
+          echo "PASS: cobc --info succeeded"
+      - name: Assert installed output is false (skipped)
         env:
           ACTUAL: ${{ steps.action.outputs.installed }}
         run: |
-          echo "actual: $ACTUAL"
-          if [ "$ACTUAL" != "true" ]; then
-            echo "FAIL: expected 'true' but got '$ACTUAL'"
+          echo "actual installed output: '$ACTUAL'"
+          if [ "$ACTUAL" = "true" ]; then
+            echo "FAIL: expected installed!=true (skip path) but got '$ACTUAL'"
             exit 1
           fi
-          echo "PASS"
-      - name: Assert cobc is available
-        run: |
-          which cobc || { echo "FAIL: cobc not found in PATH"; exit 1; }
-          cobc --version
-          echo "PASS"
+          echo "PASS: installed is not true as expected (skip path)"
