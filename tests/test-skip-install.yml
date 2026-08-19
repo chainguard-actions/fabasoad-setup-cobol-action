@@ -1,5 +1,5 @@
 ---
-name: Test force install when cobc is already installed
+name: Test skip install when cobc is already installed and force is false
 on:
   workflow_dispatch:
 jobs:
@@ -16,22 +16,22 @@ jobs:
       - id: action
         uses: .
         with:
-          version: "4.0"
-          force: "true"
-      - name: Assert installed output is true (forced reinstall)
+          force: "false"
+      - name: Assert installed output is false (installation skipped)
         env:
           ACTUAL: ${{ steps.action.outputs.installed }}
         run: |
           echo "actual: $ACTUAL"
-          if [ "$ACTUAL" != "true" ]; then
-            echo "FAIL: expected installed=true (forced) but got '$ACTUAL'"
+          if [ "$ACTUAL" != "false" ]; then
+            echo "FAIL: expected installed=false (skipped) but got '$ACTUAL'"
             exit 1
           fi
-          echo "PASS: installed=true (forced reinstall succeeded)"
-      - name: Assert cobc is still available after forced reinstall
+          echo "PASS: installed=false (installation correctly skipped)"
+      - name: Assert cobc is still available (pre-installed version)
         run: |
           if ! command -v cobc > /dev/null 2>&1; then
-            echo "FAIL: cobc is not available on PATH after forced reinstall"
+            echo "FAIL: cobc is not available on PATH"
             exit 1
           fi
           echo "PASS: cobc is available at $(which cobc)"
+          cobc --info

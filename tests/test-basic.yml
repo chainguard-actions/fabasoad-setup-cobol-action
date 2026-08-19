@@ -1,4 +1,5 @@
-name: Test basic usage (default version)
+---
+name: Test basic setup with default version
 on:
   workflow_dispatch:
 jobs:
@@ -8,21 +9,43 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - id: action
         uses: .
+        with:
+          version: "4.0"
       - name: Assert installed output is true
         env:
           ACTUAL: ${{ steps.action.outputs.installed }}
         run: |
           echo "actual: $ACTUAL"
           if [ "$ACTUAL" != "true" ]; then
-            echo "FAIL: expected installed=true, got '$ACTUAL'"
+            echo "FAIL: expected installed=true but got '$ACTUAL'"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: installed=true"
       - name: Assert cobc is available
         run: |
-          if ! command -v cobc >/dev/null 2>&1; then
-            echo "FAIL: cobc not found in PATH"
+          if ! command -v cobc > /dev/null 2>&1; then
+            echo "FAIL: cobc is not available on PATH"
             exit 1
           fi
-          echo "cobc version: $(cobc --version)"
-          echo "PASS"
+          echo "PASS: cobc is available at $(which cobc)"
+      - name: Assert cobc version info
+        run: |
+          cobc --info
+          echo "PASS: cobc --info succeeded"
+      - name: Assert cobc can compile and run a COBOL program
+        run: |
+          cat > /tmp/hello.cob << 'EOF'
+                 IDENTIFICATION DIVISION.
+                 PROGRAM-ID. HELLO.
+                 PROCEDURE DIVISION.
+                     DISPLAY "Hello World!".
+                     STOP RUN.
+          EOF
+          cobc -x -free -o /tmp/hello /tmp/hello.cob
+          OUTPUT=$(/tmp/hello)
+          echo "output: $OUTPUT"
+          if [ "$OUTPUT" != "Hello World!" ]; then
+            echo "FAIL: expected 'Hello World!' but got '$OUTPUT'"
+            exit 1
+          fi
+          echo "PASS: COBOL program compiled and ran successfully"
