@@ -1,0 +1,46 @@
+---
+name: Test force reinstall when cobc already installed
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      # First install
+      - id: first-install
+        uses: .
+        with:
+          force: "false"
+      - name: Assert first install succeeded
+        env:
+          ACTUAL: ${{ steps.first-install.outputs.installed }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ "$ACTUAL" != "true" ]; then
+            echo "FAIL: expected installed=true on first install but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: first install installed=true"
+      # Force reinstall even though cobc is already installed
+      - id: force-install
+        uses: .
+        with:
+          force: "true"
+      - name: Assert force reinstall output is true
+        env:
+          ACTUAL: ${{ steps.force-install.outputs.installed }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ "$ACTUAL" != "true" ]; then
+            echo "FAIL: expected installed=true on force reinstall but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: force reinstall installed=true"
+      - name: Assert cobc is available after force reinstall
+        run: |
+          if ! command -v cobc > /dev/null 2>&1; then
+            echo "FAIL: cobc not found on PATH after force reinstall"
+            exit 1
+          fi
+          echo "PASS: cobc available at $(which cobc)"

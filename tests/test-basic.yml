@@ -1,4 +1,5 @@
-name: Test basic usage - default version
+---
+name: Test basic usage - install GnuCOBOL with default version
 on:
   workflow_dispatch:
 jobs:
@@ -14,16 +15,18 @@ jobs:
         run: |
           echo "actual: $ACTUAL"
           if [ "$ACTUAL" != "true" ]; then
-            echo "FAIL: expected installed='true', got '$ACTUAL'"
+            echo "FAIL: expected installed=true but got '$ACTUAL'"
             exit 1
           fi
-          echo "PASS"
+          echo "PASS: installed=true"
       - name: Assert cobc is available
         run: |
           if ! command -v cobc > /dev/null 2>&1; then
-            echo "FAIL: cobc command not found"
+            echo "FAIL: cobc not found on PATH"
             exit 1
           fi
-          echo "cobc found at: $(command -v cobc)"
+          echo "PASS: cobc is available at $(which cobc)"
+      - name: Assert cobc version output
+        run: |
           cobc --version
-          echo "PASS"
+          echo "PASS: cobc --version succeeded"
