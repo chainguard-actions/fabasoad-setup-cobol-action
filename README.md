@@ -15,6 +15,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | v1.6.0 | [`v1.6.0`](https://github.com/chainguard-actions/fabasoad-setup-cobol-action/tree/v1.6.0) | [`efd8437`](https://github.com/fabasoad/setup-cobol-action/commit/efd8437ec09499cb722dc31eaf7797d62af4230c) |
 | v1.6.1 | [`v1.6.1`](https://github.com/chainguard-actions/fabasoad-setup-cobol-action/tree/v1.6.1) | [`b48beb6`](https://github.com/fabasoad/setup-cobol-action/commit/b48beb69f2c5c13dffc9c0e5035e34aef2b09b52) |
 | v1.6.2 | [`v1.6.2`](https://github.com/chainguard-actions/fabasoad-setup-cobol-action/tree/v1.6.2) | [`bdd06ad`](https://github.com/fabasoad/setup-cobol-action/commit/bdd06ad15f6c2a9df376bc25acbdc361aea50831) |
+| v1.6.3 | [`v1.6.3`](https://github.com/chainguard-actions/fabasoad-setup-cobol-action/tree/v1.6.3) | [`7d20ae6`](https://github.com/fabasoad/setup-cobol-action/commit/7d20ae68e3fa2c54482d42951fd201a87a1ba5b3) |
 
 ## Privacy
 
