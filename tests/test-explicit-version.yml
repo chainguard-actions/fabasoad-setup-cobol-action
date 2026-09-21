@@ -1,0 +1,40 @@
+---
+name: Test explicit version input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          version: "4.0"
+      - name: Assert installed output is true
+        env:
+          INSTALLED: ${{ steps.action.outputs.installed }}
+        run: |
+          echo "installed: $INSTALLED"
+          if [ "$INSTALLED" != "true" ]; then
+            echo "FAIL: expected installed=true but got '$INSTALLED'"
+            exit 1
+          fi
+          echo "PASS: installed=true"
+      - name: Assert cobc is available
+        run: |
+          if ! command -v cobc > /dev/null 2>&1; then
+            echo "FAIL: cobc command not found after installation"
+            exit 1
+          fi
+          echo "PASS: cobc is available at $(which cobc)"
+      - name: Assert cobc version is 4.0
+        run: |
+          VERSION_OUTPUT=$(cobc --version 2>&1 || true)
+          echo "version output: $VERSION_OUTPUT"
+          if echo "$VERSION_OUTPUT" | grep -q "4\.0"; then
+            echo "PASS: cobc version 4.0 confirmed"
+          else
+            echo "FAIL: expected version 4.0 in output: $VERSION_OUTPUT"
+            exit 1
+          fi

@@ -1,0 +1,36 @@
+---
+name: Test force reinstall
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Pre-install cobc via apt-get
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y gnucobol4
+          echo "Pre-installed cobc: $(which cobc)"
+      - id: action
+        uses: .
+        with:
+          version: "4.0"
+          force: "true"
+      - name: Assert installed output is true (forced reinstall)
+        env:
+          INSTALLED: ${{ steps.action.outputs.installed }}
+        run: |
+          echo "installed: $INSTALLED"
+          if [ "$INSTALLED" != "true" ]; then
+            echo "FAIL: expected installed=true (forced) but got '$INSTALLED'"
+            exit 1
+          fi
+          echo "PASS: installed=true (forced reinstall)"
+      - name: Assert cobc is still available after force reinstall
+        run: |
+          if ! command -v cobc > /dev/null 2>&1; then
+            echo "FAIL: cobc command not found after forced reinstall"
+            exit 1
+          fi
+          echo "PASS: cobc is available at $(which cobc)"
