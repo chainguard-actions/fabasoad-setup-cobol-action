@@ -1,0 +1,45 @@
+name: Test basic install
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+      - name: Assert installed output is true
+        env:
+          ACTUAL: ${{ steps.action.outputs.installed }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ "$ACTUAL" != "true" ]; then
+            echo "FAIL: expected 'true'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert cobc works and compiles a program
+        run: |
+          set -e
+          command -v cobc || { echo "FAIL: cobc not on PATH"; exit 1; }
+          cobc --version | tee version.txt
+          if ! grep -q "3.2" version.txt; then
+            echo "FAIL: expected cobc version 3.2"
+            exit 1
+          fi
+          cd "$RUNNER_TEMP"
+          cat > hello.cob <<'EOF'
+          IDENTIFICATION DIVISION.
+          PROGRAM-ID. HELLO.
+          PROCEDURE DIVISION.
+              DISPLAY "Hello COBOL".
+              STOP RUN.
+          EOF
+          cobc -free -x -o hello hello.cob
+          OUT="$(./hello)"
+          echo "output: $OUT"
+          if [ "$OUT" != "Hello COBOL" ]; then
+            echo "FAIL: unexpected program output"
+            exit 1
+          fi
+          echo "PASS"

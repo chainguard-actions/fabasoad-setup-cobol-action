@@ -1,0 +1,40 @@
+name: Test forced install
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Put a fake cobc on PATH
+        run: |
+          mkdir -p "$RUNNER_TEMP/fakebin"
+          cat > "$RUNNER_TEMP/fakebin/cobc" <<'EOF'
+          #!/bin/sh
+          echo "fake cobc $*"
+          exit 0
+          EOF
+          chmod +x "$RUNNER_TEMP/fakebin/cobc"
+          echo "$RUNNER_TEMP/fakebin" >> "$GITHUB_PATH"
+      - id: action
+        uses: .
+        with:
+          force: "true"
+      - name: Assert installed output is true
+        env:
+          ACTUAL: ${{ steps.action.outputs.installed }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ "$ACTUAL" != "true" ]; then
+            echo "FAIL: expected 'true'"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert real cobc installed
+        run: |
+          if [ ! -x /usr/bin/cobc ]; then
+            echo "FAIL: /usr/bin/cobc not found"
+            exit 1
+          fi
+          /usr/bin/cobc --version
+          echo "PASS"
