@@ -4,61 +4,92 @@
 
 > This file was generated automatically by the hardening agent.
 
-**Policy SHA:** `d636be7e43ef829af6e853da6b3c7566db9f72fe`
+**Policy SHA:** `374911c4be584df24e6da57af2d990570ef0f859`
 
 **Test Policy SHA:** `843adf9e4b8f85d0c08b27b9d0b09dd094b54702`
 
 **Harden Agent Version:** `2`
 
-Action **fabasoad--setup-cobol-action/v1.6.2** was hardened automatically. 4 finding(s) were identified and resolved across 1 iteration(s).
+Action **fabasoad--setup-cobol-action/v1.6.2** was hardened automatically. 2 finding(s) were identified and resolved across 1 iteration(s).
 
 ## Findings Fixed
 
 ### script-injection (severity: high)
 
-Sub-rule (a): The 'Install COBOL' step in action.yml directly interpolates `${{ steps.info.outputs.bin-path }}` inside a `run:` shell command string. This expression is substituted by the YAML template engine before the shell sees it, allowing injection of shell metacharacters. The offending line is: `run: ./install-cobc.sh "${INPUT_VERSION}" "${{ steps.info.outputs.bin-path }}"`
+Rule (a) violated: the 'Install COBOL' step puts a GitHub Actions expression straight into its run: script: `run: ./install-cobc.sh "${INPUT_VERSION}" "${{ steps.info.outputs.bin-path }}"`. The steps.info.outputs.bin-path value is substituted into the shell script by template expansion before the shell parses it. Fix: map it to an env var (for example BIN_PATH: ${{ steps.info.outputs.bin-path }}) and reference it as "${BIN_PATH}".
 
 Locations:
 
-- `action.yml:49`
+- `action.yml:54`
 
-### script-injection (severity: high)
+### prior-fix (severity: high)
 
-Sub-rule (a): The 'Test action completion' step in functional-tests.yml directly interpolates `${{ steps.setup-cobol-1.outputs.installed }}`, `${{ steps.setup-cobol-2.outputs.installed }}`, and `${{ matrix.force }}` inside a multi-line `run:` shell script. These expressions are substituted before the shell executes, enabling injection of shell metacharacters via action outputs or matrix values.
+Carried forward from this version's previous harden, which fixed it; fix it again unless the code no longer has the problem. The previous harden changed action.yml without recording a finding for it, and this analysis reported nothing there. Re-apply its security changes unless the code no longer needs them. The previous patch:
+```diff
+diff --git a/action.yml b/action.yml
+index 9aa1c38..88a7930 100644
+--- a/action.yml
++++ b/action.yml
+@@ -1,4 +1,3 @@
+----
+ name: Setup COBOL
+ author: Yevhen Fabizhevskyi
+ description: This action sets up GnuCOBOL.
+@@ -23,13 +22,29 @@ outputs:
+ runs:
+   using: "composite"
+   steps:
+     - name: Fail
+       if: ${{ runner.os != 'Linux' }}
+       run: |
+         echo "::error title=OS is not supported::${RUNNER_OS} ${RUNNER_ARCH} is not supported"
+         exit 1
+       shell: sh
+-
+     - name: Validate inputs
+       id: validate-inputs
+       env:
+@@ -37,7 +52,6 @@ runs:
+       run: ./validate-inputs.sh "${INPUT_FORCE}"
+       shell: sh
+       working-directory: ${{ github.action_path }}/src
+-
+     - name: Collect info
+       id: info
+       env:
+@@ -45,16 +59,15 @@ runs:
+       run: ./collect-info.sh "${INPUT_FORCE}"
+       shell: sh
+       working-directory: ${{ github.action_path }}/src
+-
+     - name: Install COBOL
+       if: ${{ steps.info.outputs.bin-installed == 'false' }}
+       id: install-cobc
+       env:
+         INPUT_VERSION: "${{ inputs.version }}"
+-      run: ./install-cobc.sh "${INPUT_VERSION}" "${{ steps.info.outputs.bin-path }}"
++        BIN_PATH: "${{ steps.info.outputs.bin-path }}"
++      run: ./install-cobc.sh "${INPUT_VERSION}" "${BIN_PATH}"
+       shell: sh
+       working-directory: ${{ github.action_path }}/src
+-
+     - name: Print version
+       run: cobc --info
+       shell: sh
+
+```
 
 Locations:
 
-- `.github/workflows/functional-tests.yml:56`
-
-### unpinned-uses (severity: high)
-
-Multiple workflow files reference actions/reusable workflows using mutable tag or branch refs instead of pinned 40-character commit SHAs. Unpinned refs are vulnerable to supply-chain attacks if the upstream ref is moved or compromised. Failing references: functional-tests.yml: `actions/checkout@v6` (appears twice); linting.yml: `fabasoad/reusable-workflows/.github/workflows/wf-pre-commit.yml@main`; release.yml: `fabasoad/reusable-workflows/.github/workflows/wf-github-release.yml@main`; security.yml: `fabasoad/reusable-workflows/.github/workflows/wf-security-sast.yml@main`; sync-labels.yml: `fabasoad/reusable-workflows/.github/workflows/wf-sync-labels.yml@main`; update-license.yml: `fabasoad/reusable-workflows/.github/workflows/wf-update-license.yml@main`.
-
-Locations:
-
-- `.github/workflows/functional-tests.yml:20`
-- `.github/workflows/functional-tests.yml:37`
-- `.github/workflows/linting.yml:11`
-- `.github/workflows/release.yml:9`
-- `.github/workflows/security.yml:20`
-- `.github/workflows/sync-labels.yml:11`
-- `.github/workflows/update-license.yml:11`
-
-### missing-permissions (severity: medium)
-
-The workflow file functional-tests.yml has no top-level `permissions:` key and neither of its jobs (`run-script`, `test-force`) defines a job-level `permissions:` block. Without explicit permissions, the workflow inherits the repository's default token permissions, which may be overly broad (e.g., write access to contents).
-
-Locations:
-
-- `.github/workflows/functional-tests.yml:1`
+- `action.yml`
 
 ## Iteration Notes
 
 ### Iteration 1
 
-**Fixes applied:** script-injection, unpinned-uses, missing-permissions
+**Fixes applied:** script-injection, prior-fix
 
 **Notes:**
 
-Fixed all four findings: (1) action.yml script injection: moved `${{ steps.info.outputs.bin-path }}` into env block as BIN_PATH; (2) functional-tests.yml script injection: moved steps outputs and matrix.force into env block; (3) unpinned-uses: pinned actions/checkout@v6 to SHA d23441a48e516b6c34aea4fa41551a30e30af803 and all fabasoad/reusable-workflows@main references to SHA 10062f8186847226cb4865efbb8047795d372bae across 5 workflow files; (4) missing-permissions: added `permissions: {}` at top level of functional-tests.yml.
+Moved steps.info.outputs.bin-path into env BIN_PATH in the Install COBOL step and referenced it as "${BIN_PATH}". This is the same change the previous harden made (the other parts of that diff were only whitespace).
 
