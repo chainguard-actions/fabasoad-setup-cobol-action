@@ -4,40 +4,92 @@
 
 > This file was generated automatically by the hardening agent.
 
-**Policy SHA:** `d636be7e43ef829af6e853da6b3c7566db9f72fe`
+**Policy SHA:** `374911c4be584df24e6da57af2d990570ef0f859`
 
 **Test Policy SHA:** `843adf9e4b8f85d0c08b27b9d0b09dd094b54702`
 
 **Harden Agent Version:** `2`
 
-Action **fabasoad--setup-cobol-action/v1.6.3** was hardened automatically. 1 finding(s) were identified and resolved across 1 iteration(s).
+Action **fabasoad--setup-cobol-action/v1.6.3** was hardened automatically. 2 finding(s) were identified and resolved across 1 iteration(s).
 
 ## Findings Fixed
 
 ### script-injection (severity: high)
 
-Sub-rule (a) violation: A GitHub Actions expression `${{ steps.info.outputs.bin-path }}` is directly interpolated inside a `run:` shell command string in the 'Install COBOL' step. The offending line is:
-
-  run: ./install-cobc.sh "${INPUT_VERSION}" "${{ steps.info.outputs.bin-path }}"
-
-The `steps.info.outputs.bin-path` value is written by `collect-info.sh` and is derived from `RUNNER_TEMP` and a timestamp, but it flows through a step output and is then re-injected via YAML template substitution directly into the shell command before the shell parses it. Any workflow-level manipulation of that output (e.g. via a compromised prior step) could inject arbitrary shell metacharacters. The value must be passed via an `env:` variable and referenced as a quoted shell variable instead:
-
-  env:
-    INPUT_VERSION: "${{ inputs.version }}"
-    BIN_PATH: "${{ steps.info.outputs.bin-path }}"
-  run: ./install-cobc.sh "${INPUT_VERSION}" "${BIN_PATH}"
+Rule (a): the 'Install COBOL' step puts a GitHub Actions expression straight into its run: script: `run: ./install-cobc.sh "${INPUT_VERSION}" "${{ steps.info.outputs.bin-path }}"`. The step output is substituted into the script text before the shell parses it. Fix: pass it through an env var (e.g. `BIN_PATH: ${{ steps.info.outputs.bin-path }}`) and reference it as "${BIN_PATH}".
 
 Locations:
 
 - `action.yml:54`
 
+### prior-fix (severity: high)
+
+Carried forward from this version's previous harden, which fixed it; fix it again unless the code no longer has the problem. The previous harden changed action.yml without recording a finding for it, and this analysis reported nothing there. Re-apply its security changes unless the code no longer needs them. The previous patch:
+```diff
+diff --git a/action.yml b/action.yml
+index 9aa1c38..88a7930 100644
+--- a/action.yml
++++ b/action.yml
+@@ -1,4 +1,3 @@
+----
+ name: Setup COBOL
+ author: Yevhen Fabizhevskyi
+ description: This action sets up GnuCOBOL.
+@@ -23,13 +22,29 @@ outputs:
+ runs:
+   using: "composite"
+   steps:
+     - name: Fail
+       if: ${{ runner.os != 'Linux' }}
+       run: |
+         echo "::error title=OS is not supported::${RUNNER_OS} ${RUNNER_ARCH} is not supported"
+         exit 1
+       shell: sh
+-
+     - name: Validate inputs
+       id: validate-inputs
+       env:
+@@ -37,7 +52,6 @@ runs:
+       run: ./validate-inputs.sh "${INPUT_FORCE}"
+       shell: sh
+       working-directory: ${{ github.action_path }}/src
+-
+     - name: Collect info
+       id: info
+       env:
+@@ -45,16 +59,15 @@ runs:
+       run: ./collect-info.sh "${INPUT_FORCE}"
+       shell: sh
+       working-directory: ${{ github.action_path }}/src
+-
+     - name: Install COBOL
+       if: ${{ steps.info.outputs.bin-installed == 'false' }}
+       id: install-cobc
+       env:
+         INPUT_VERSION: "${{ inputs.version }}"
+-      run: ./install-cobc.sh "${INPUT_VERSION}" "${{ steps.info.outputs.bin-path }}"
++        BIN_PATH: "${{ steps.info.outputs.bin-path }}"
++      run: ./install-cobc.sh "${INPUT_VERSION}" "${BIN_PATH}"
+       shell: sh
+       working-directory: ${{ github.action_path }}/src
+-
+     - name: Print version
+       run: cobc --info
+       shell: sh
+
+```
+
+Locations:
+
+- `action.yml`
+
 ## Iteration Notes
 
 ### Iteration 1
 
-**Fixes applied:** script-injection
+**Fixes applied:** script-injection, prior-fix
 
 **Notes:**
 
-Fixed script-injection in action.yml 'Install COBOL' step: moved `${{ steps.info.outputs.bin-path }}` from the `run:` shell command string into the `env:` block as `BIN_PATH`, and updated the command to reference it as the quoted shell variable `"${BIN_PATH}"`. This prevents potential shell metacharacter injection via YAML template substitution.
+Moved steps.info.outputs.bin-path into a BIN_PATH env var on the 'Install COBOL' step. The step now runs "${BIN_PATH}" instead of putting the expression straight into the script. This is the same change the previous harden made. That patch also removed the '---' line and some blank lines, but those were only formatting, so I left them as upstream has them.
 
